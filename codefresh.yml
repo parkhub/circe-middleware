@@ -1,0 +1,34 @@
+version: '1.0'
+steps:
+  BuildingDockerImage:
+    title: Building Docker Image
+    type: build
+    image_name: circe-middleware
+    dockerfile: Dockerfile
+  RunningTests:
+    title: Running tests
+    image: ${{BuildingDockerImage}}
+    working_directory: /npm-module
+    commands:
+      - npm start validate
+      - npm start report-coverage
+    on_success:
+      metadata:
+        set:
+          - '${{BuildingDockerImage.imageId}}':
+              - CF_QUALITY: true
+    on_fail:
+      metadata:
+        set:
+          - '${{BuildingDockerImage.imageId}}':
+              - CF_QUALITY: false
+  PublishingModule:
+    title: Publishing my module
+    image: ${{BuildingDockerImage}}
+    working_directory: /npm-module 
+    when:
+      branch:
+        only: [ master ]
+    commands:
+      - npm start build
+      - npm start release
