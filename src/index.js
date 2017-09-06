@@ -6,9 +6,11 @@
  */
 
 export default function circeMiddleware(middlewareFns: Array<(mixed) => mixed>): mixed => mixed {
-  const length: number = middlewareFns.length;
+  const localMiddlewareFns = middlewareFns;
 
-  return (...args: Array<mixed>) => {
+  function applyMiddleware(...args: Array<mixed>) {
+    const length = localMiddlewareFns.length;
+
     let index = 0;
     let result = middlewareFns[index](...args);
 
@@ -21,5 +23,11 @@ export default function circeMiddleware(middlewareFns: Array<(mixed) => mixed>):
     }
 
     return result;
+  }
+
+  applyMiddleware.addMiddleware = function addMiddleware(middlewareFn) {
+    localMiddlewareFns.push(middlewareFn);
   };
+
+  return applyMiddleware;
 }
