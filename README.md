@@ -50,14 +50,65 @@ if (result === 'Mikasa is bae') {
 ```
 
 ## API
-middleware([function, function, ...function])
+**middleware([function, function, ...function])**
 
 Returns a function which you can then pass in the initial value to apply the middleware to.
 
 ```javascript
+import middleware from '@parkhub/circe-middleware';
+
 const applyMiddleware = middleware([fn1, fn2, fn3]);
 const result = applyMiddleware('Satsuki');
 ```
+
+**addMiddleware(function)**
+
+Adds a middleware function to the end of the current array of functions, if any.
+```javascript
+import middleware from '@parkhub/circe-middleware';
+
+const applyMiddleware = middleware();
+const myFunction = (value) => console.log(value);
+
+applyMiddleware.addMiddleware(myFunction);
+
+applyMiddleware('Satsuki'); // Output to console: Satsuki 
+
+const anotherMiddleware = middleware([myFunction));
+const anotherFunction  = () => console.log('Is awesome');
+
+anotherMiddleware.addMiddleware(anotherFunction);
+
+anotherMiddleware('Satsuki'); 
+/* Output to console: 
+	Satsuki
+	Is awesome
+*/
+```
+
+## Result Analyzers
+Result analyzers inspect the return value between each middleware to determine the next action, if any. They are all prefixed by the word *circe* to avoid clashes with actual result elements and should be an object property.
+
+
+**circeShortCircuit**
+```javascript
+import middleware from '@parkhub/circe-middleware';
+
+const startingValue = {
+  awesome: 'allura'
+};
+
+const middlewareTwo = () => {};
+
+const middlewareOne = () => ({
+  circeShortCircuit: true
+});
+
+const middlewares = middleware([middlewareOne, middlewareTwo]);
+
+middlewares(startingValue);
+```
+When this analyzer is set to **true**, the next middleware will **not execute**(default is **false**)
 
 [semantic-release-badge]: https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg
 [sem-release-badge]: https://github.com/semantic-release/semantic-release
@@ -69,7 +120,7 @@ const result = applyMiddleware('Satsuki');
 [dependencyci]: https://dependencyci.com/github/parkhub/circe-middleware
 [version-badge]: https://img.shields.io/npm/v/@parkhub/circe-middleware.svg?style=flat-square
 [package]: https://www.npmjs.com/package/@parkhub/circe-middleware
-[license-badge]: https://img.shields.io/npm/l/@parkhub/circe-middleware.svg?style=flat-square
+[license-badge]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
 [license]: https://github.com/parkhub/circe-middleware/blob/master/LICENSE
 [prs-badge]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
 [prs]: http://makeapullrequest.com
@@ -84,6 +135,7 @@ const result = applyMiddleware('Satsuki');
 [semantic-release]: https://github.com/semantic-release/semantic-release
 [commitizen-friendly-badge]: https://img.shields.io/badge/commitizen-friendly-brightgreen.svg
 [comm-friendly-badge]: http://commitizen.github.io/cz-cli/
+
 
 
 
