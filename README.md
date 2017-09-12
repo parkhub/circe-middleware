@@ -1,6 +1,6 @@
 # Circe Middleware
 
-A simple module that takes an array of functions(middleware) and passes the result of each to the next function in the array in order!
+A simple middleware module that you know and love. Using the "next" pattern means you can have async/sync middleware!
 
 [![Build Status][build-badge]][build]
 [![Code Coverage][coverage-badge]][coverage]
@@ -24,91 +24,51 @@ npm install @parkhub/circe-middleware
 
 ## Usage
 ```javascript
-import middleware from '@parkhub/circe-middleware';
+import circeMiddleware from '@parkhub/circe-middleware';
 
-const firstMiddleware = (initialValue) => {
-  console.log(`Getting the first value ${initialValue}`);
+const middlewareFnOne = (value, next) => {
+  // value is 'starting value'
 
-  return {
-    initialValue
-  };
+  // Call next and pass params with any arity(as long as next middleware expects the same arity)
+  next('Satsuki!');
 };
 
-const secondMiddleware = (value) => {
-  console.log(`Getting the result of first middleware ${JSON.stringify(value, null, 4)}`);
+const middlewareFnTwo = (value, next) => {
+  // Value is 'Satsuki!'
 
-  const { initialValue } = value;
-
-  return initialValue;
+  // Call next and pass params with any arity(as long as next middleware expects the same arity)
+  next({ going: 'gone' }, 1);
 };
 
-const result = middleware([firstMiddleware, secondMiddleware])('Mikasa is bae');
+const middlewareFnThree = (obj, int, next) => {
+  // obj is { going: 'gone' } and int is 1
 
-if (result === 'Mikasa is bae') {
-  console.log('Yes!');
+  next('done');
 }
+
+// The middleware is executed in the order of the passed array
+const middleware = circeMiddleware([middlewareFnOne, middlewareFnTwo]);
+
+// This middleware will be executed after the first two passed into the middleware factory
+middleware.use(middlewareFnThree);
+
+middleware.run('starting value', (finalValue) => {
+  // finalValue is 'done'
+});
 ```
+
+## Middlewares
+A middleware is a function that receives an arbitrary number of parameters with the last one being the **next** function. 
+**You have to be conscious of the order of the middlware and what it accepts as parameters**
 
 ## API
-**middleware([function, function, ...function])**
+### use(middlewareFn)
+#### middlewareFn - a function with signature of (arg1, arg2, ...argX, next)
+Adds a middleware to the middleware stack.
 
-Returns a function which you can then pass in the initial value to apply the middleware to.
+### run(...args, () => {})
+### The parameters passed into the run method are first with the last parameter being the FINAL function the middlewares
 
-```javascript
-import middleware from '@parkhub/circe-middleware';
-
-const applyMiddleware = middleware([fn1, fn2, fn3]);
-const result = applyMiddleware('Satsuki');
-```
-
-**addMiddleware(function)**
-
-Adds a middleware function to the end of the current array of functions, if any.
-```javascript
-import middleware from '@parkhub/circe-middleware';
-
-const applyMiddleware = middleware();
-const myFunction = (value) => console.log(value);
-
-applyMiddleware.addMiddleware(myFunction);
-
-applyMiddleware('Satsuki'); // Output to console: Satsuki 
-
-const anotherMiddleware = middleware([myFunction));
-const anotherFunction  = () => console.log('Is awesome');
-
-anotherMiddleware.addMiddleware(anotherFunction);
-
-anotherMiddleware('Satsuki'); 
-/* Output to console: 
-	Satsuki
-	Is awesome
-*/
-```
-
-## Result Analyzers
-Result analyzers inspect the return value between each middleware to determine the next action, if any. They are all prefixed by the word *circe* to avoid clashes with actual result elements and should be an object property.
-
-
-**circeShortCircuit**
-```javascript
-import middleware from '@parkhub/circe-middleware';
-
-const startingValue = {
-  awesome: 'allura'
-};
-
-const middlewareTwo = () => {};
-
-const middlewareOne = () => ({
-  circeShortCircuit: true
-});
-
-const middlewares = middleware([middlewareOne, middlewareTwo]);
-
-middlewares(startingValue);
-```
-When this analyzer is set to **true**, the next middleware will **not execute**(default is **false**)
 
 [semantic-release-badge]: https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg
 [sem-release-badge]: https://github.com/semantic-release/semantic-release
@@ -135,6 +95,7 @@ When this analyzer is set to **true**, the next middleware will **not execute**(
 [semantic-release]: https://github.com/semantic-release/semantic-release
 [commitizen-friendly-badge]: https://img.shields.io/badge/commitizen-friendly-brightgreen.svg
 [comm-friendly-badge]: http://commitizen.github.io/cz-cli/
+
 
 
 
