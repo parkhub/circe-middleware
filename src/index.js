@@ -5,21 +5,48 @@
  * @author Daniel Olivares
  */
 
-export default function circeMiddleware(middlewareFns: Array<(mixed) => mixed>): mixed => mixed {
-  const length: number = middlewareFns.length;
+type Middleware = () => void;
 
-  return (...args: Array<mixed>) => {
-    let index = 0;
-    let result = middlewareFns[index](...args);
+/*
+ * TODO The use method wraps an extra function around the stack of functions, how can we avoid it?
+*/
+function last(arr: mixed[]): mixed {
+  const { length } = arr;
 
-    // Let's start it off with the next function
-    index += 1;
+  return arr[length - 1];
+}
 
-    while (index < length) {
-      result = middlewareFns[index](result);
-      index += 1; // Keep the loop going since our next function has executed
+function reduceOneRight(arr: mixed[]): mixed[] {
+  return arr.slice(0, -1);
+}
+
+export default function circeMiddleware(middlewares: Middleware[] = []) {
+  const middlewareProto: { use: (() => void) => void, run: () => void } = {
+    use(fn) {
+      this.run = (stack => (...args) => {
+        const nonNextArgs = reduceOneRight(args);
+        const next = last(args);
+
+        return stack(...nonNextArgs, (...nextArgs) => {
+          fn(...nextArgs, next);
+        });
+      })(this.run);
+    },
+
+    run(...args) {
+      const next = last(args);
+
+      if (typeof next !== 'function') {
+        throw new Error('Final paramater must be a function');
+      }
+
+      next.apply(this, reduceOneRight(args));
     }
-
-    return result;
   };
+
+  const middleware = Object.create(middlewareProto);
+
+  middlewares.forEach(ware => middleware.use(ware));
+
+  return middleware;
 }

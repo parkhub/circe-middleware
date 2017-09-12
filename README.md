@@ -1,6 +1,6 @@
 # Circe Middleware
 
-A simple module that takes an array of functions(middleware) and passes the result of each to the next function in the array in order!
+A simple middleware module that you know and love. Using the "next" pattern means you can have async/sync middleware!
 
 [![Build Status][build-badge]][build]
 [![Code Coverage][coverage-badge]][coverage]
@@ -24,40 +24,51 @@ npm install @parkhub/circe-middleware
 
 ## Usage
 ```javascript
-import middleware from '@parkhub/circe-middleware';
+import circeMiddleware from '@parkhub/circe-middleware';
 
-const firstMiddleware = (initialValue) => {
-  console.log(`Getting the first value ${initialValue}`);
+const middlewareFnOne = (value, next) => {
+  // value is 'starting value'
 
-  return {
-    initialValue
-  };
+  // Call next and pass params with any arity(as long as next middleware expects the same arity)
+  next('Satsuki!');
 };
 
-const secondMiddleware = (value) => {
-  console.log(`Getting the result of first middleware ${JSON.stringify(value, null, 4)}`);
+const middlewareFnTwo = (value, next) => {
+  // Value is 'Satsuki!'
 
-  const { initialValue } = value;
-
-  return initialValue;
+  // Call next and pass params with any arity(as long as next middleware expects the same arity)
+  next({ going: 'gone' }, 1);
 };
 
-const result = middleware([firstMiddleware, secondMiddleware])('Mikasa is bae');
+const middlewareFnThree = (obj, int, next) => {
+  // obj is { going: 'gone' } and int is 1
 
-if (result === 'Mikasa is bae') {
-  console.log('Yes!');
+  next('done');
 }
+
+// The middleware is executed in the order of the passed array
+const middleware = circeMiddleware([middlewareFnOne, middlewareFnTwo]);
+
+// This middleware will be executed after the first two passed into the middleware factory
+middleware.use(middlewareFnThree);
+
+middleware.run('starting value', (finalValue) => {
+  // finalValue is 'done'
+});
 ```
+
+## Middlewares
+A middleware is a function that receives an arbitrary number of parameters with the last one being the **next** function. 
+**You have to be conscious of the order of the middlware and what it accepts as parameters**
 
 ## API
-middleware([function, function, ...function])
+### use(middlewareFn)
+#### middlewareFn - a function with signature of (arg1, arg2, ...argX, next)
+Adds a middleware to the middleware stack.
 
-Returns a function which you can then pass in the initial value to apply the middleware to.
+### run(...args, () => {})
+### The parameters passed into the run method are first with the last parameter being the FINAL function the middlewares
 
-```javascript
-const applyMiddleware = middleware([fn1, fn2, fn3]);
-const result = applyMiddleware('Satsuki');
-```
 
 [semantic-release-badge]: https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg
 [sem-release-badge]: https://github.com/semantic-release/semantic-release
@@ -69,7 +80,7 @@ const result = applyMiddleware('Satsuki');
 [dependencyci]: https://dependencyci.com/github/parkhub/circe-middleware
 [version-badge]: https://img.shields.io/npm/v/@parkhub/circe-middleware.svg?style=flat-square
 [package]: https://www.npmjs.com/package/@parkhub/circe-middleware
-[license-badge]: https://img.shields.io/npm/l/@parkhub/circe-middleware.svg?style=flat-square
+[license-badge]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
 [license]: https://github.com/parkhub/circe-middleware/blob/master/LICENSE
 [prs-badge]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square
 [prs]: http://makeapullrequest.com
@@ -84,6 +95,8 @@ const result = applyMiddleware('Satsuki');
 [semantic-release]: https://github.com/semantic-release/semantic-release
 [commitizen-friendly-badge]: https://img.shields.io/badge/commitizen-friendly-brightgreen.svg
 [comm-friendly-badge]: http://commitizen.github.io/cz-cli/
+
+
 
 
 
